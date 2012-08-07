@@ -1,4 +1,6 @@
------------------------------------------------------------------------------
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+
 -- |
 -- Module      :  Algorithms.NaturalSort
 -- Copyright   :  (c) 2010 John Millikin
@@ -8,21 +10,20 @@
 -- Portability :  portable
 --
 -- Human-friendly text collation
---
------------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances #-}
 module Algorithms.NaturalSort
 	( SortKey
 	, NaturalSort (..)
 	, compare
 	) where
-import Prelude hiding (compare)
+
+import           Prelude hiding (compare)
 import qualified Prelude as Prelude
-import Data.Char (isDigit)
-import Data.Function (on)
+import           Data.Char (isDigit)
+import           Data.Function (on)
 import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
+
 import qualified Text.Parsec as P
 
 data SortChunk
@@ -65,16 +66,14 @@ data SortKey = SortKey [SortChunk]
 class NaturalSort a where
 	-- | Split a sortable type into textual and numeric sections, with no
 	-- collation transformation.
-	-- 
+	--
 	-- If advanced collation is required, either pre-transform the input
 	-- (using eg 'T.toLower') or use 'sortKeyCollated'.
-	-- 
 	sortKey :: a -> SortKey
 	
 	-- | Split a sortable type into textual and numeric sections, using
 	-- a custom collation transformation. This is useful for providing
 	-- language- or use-specific ordering.
-	-- 
 	sortKeyCollated :: (T.Text -> B.ByteString) -> a -> SortKey
 
 instance NaturalSort String where
@@ -101,12 +100,12 @@ parseText toBytes string = parsed where
 		-- This should never happen; the parser has no failure
 		-- conditions, unless somehow something broke within Parsec
 		-- itself.
-		Left err -> error $ "sortKey failed: " ++ show err
+		Left err -> error ("sortKey failed: " ++ show err)
 	
-	parser = fmap SortKey $ P.manyTill chunk P.eof where
+	parser = fmap SortKey (P.manyTill chunk P.eof) where
 		chunk = P.choice [int, text]
-		int = fmap (Integer . read) $ P.many1 P.digit
-		text = fmap toText $ P.many1 notDigit
+		int = fmap (Integer . read) (P.many1 P.digit)
+		text = fmap toText (P.many1 notDigit)
 		notDigit = P.satisfy (not . isDigit)
 	
 	toText chars = let text = T.pack chars in case toBytes of
